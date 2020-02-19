@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<style type="text/css">
+
+/*Add styling here */
+
+</style>
+
+<body>
+  <h1>Student Heights and Eye Colors</h1>
+</body>
+
+<script>
+
+//Define variables that do not need data first:
+
+//Define Margins and svg here:
+
+var margin = {top: 20, right: 30, bottom: 280, left: 30}
+
+var width = 900 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+//var svg = d3.select('body').append('div').append('svg')
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+//Define xscale, yscale, xaxis, and yaxis here:
+
+var xScale = d3.scaleBand().rangeRound([0, width])
+  .padding([.1])
+  .rangeRound([0, width]);
+
+var yScale = d3.scaleLinear().range([height, 0	]);
+ 
+var xAxis = d3.axisBottom(xScale)
+
+var yAxis = d3.axisLeft(yScale).tickFormat(d3.format(`.2s`));
+
+
+
+
+
+
+
+// var xAxis = 
+
+// var yAxis = 
+
+
+// Reading in data here, then calling "ready" function:
+d3.csv("https://raw.githubusercontent.com/myt00seven/msia-data-vis-data/master/AnonymousStudentNameHeightEye.csv", function(d) {
+  return {
+    Height: +d.Height,
+    Name: d['Name'],
+    EyeColor: d['Eye Color']
+  }
+}).then(ready);
+// Ready Function
+function ready(data) {
+  
+  // filtering for 2018 data
+  //data2018 = data.filter(function(d) { return d.year == 2018})
+  
+  //console.log(data2018)
+
+  // Define xScale and yScale domains here:
+	
+  //define sclaes manually instead of d3.extent so that min value is 0
+  yScale.domain([0, d3.max(data, function(d) {return d.Height})]);
+  xScale.domain(data.map(function(d) { return d.Name; }));
+
+  // define xAxisGroup and yAxisGroup here:
+//const innerHeight = height - margin.top - margin.bottom;
+  
+ var xAxisGroup = svg.append('g')
+ 		.attr('class', 'x axis')
+ 		.call(xAxis)
+ 		.attr("transform", "translate(0," + height + ")")
+  	.selectAll('text')
+    .attr('transform', 'rotate(45) translate(x, y)')
+ 
+ .attr('transform', 'rotate(45) translate(8, 1)')
+		.style('text-anchor', 'start'); 	
+
+ var yAxisGroup = svg.append('g')
+ 		.attr('class', 'y axis')
+ 		.call(yAxis);
+
+
+  // Create bars here:
+  
+    svg.selectAll(".bar") 
+    .data(data) 
+    .enter().append("rect")
+    .attr("class", "bar")
+    .attr("x", function(d) { return xScale(d.Name); }) 
+    .attr("y", function(d) { return yScale(d.Height); })
+    .attr("width", xScale.bandwidth()) 
+    .attr("height", function(d) { return height - yScale(d.Height); }) 
+    .style("fill", "red") //assign a color of red.
+
+ }
+
+
+</script>

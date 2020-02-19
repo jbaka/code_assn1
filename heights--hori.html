@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>HeightsEyes</title>
+        <script src="http://d3js.org/d3.v5.js"></script>
+        <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+        <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+        <script src="https://d3js.org/d3-color.v1.min.js"></script>
+        <style type="text/css"></style>
+    </head>
+
+    <style type="text/css">
+
+svg {
+  border:1px solid #f0f;
+}
+  
+.axis line {
+  stroke-width:1px;
+  stroke: #ccc;
+  stroke-dasharray: 2px 2px;
+}
+
+.axis text {
+  font-size: 12px;
+  fill: #777;
+}
+
+.axis path {
+  display: none;
+}
+
+</style>
+
+<body>
+  <h1>Student Heights and Eye Colors</h1>
+</body>
+
+<script>
+
+//Define variables that do not need data first:
+
+//Define Margins and svg here:
+
+var margin = {top: 0, right: 30, bottom: 1220, left: 50}
+
+var width = 1100 - margin.left - margin.right,
+    height = 1500 - margin.top - margin.bottom;
+
+var legendPos = {
+            x: 1050,
+            y: 0,
+            width: 10,
+            height: 50
+        };
+
+//var svg = d3.select('body').append('div').append('svg')
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+   .attr("transform","rotate(90 200 200)") //rotate entire graph to make horizontal
+   .text("Value ($)");
+ 
+//Define xscale, yscale, xaxis, and yaxis here:
+
+var xScale = d3.scaleBand().rangeRound([0, width])
+  .padding([.1])
+  .rangeRound([0, width]);
+
+var yScale = d3.scaleLinear().range([height, 0	]);
+ 
+var xAxis = d3.axisBottom(xScale)
+
+var yAxis = d3.axisLeft(yScale).tickFormat(d3.format(`.2s`)).tickSize(-(width));
+
+var keys = Array(3) ["Black", "Brown", "Blue"]
+
+// Reading in data here, then calling "ready" function:
+d3.csv("https://raw.githubusercontent.com/myt00seven/msia-data-vis-data/master/AnonymousStudentNameHeightEye.csv", function(d) {
+  return {
+    Height: +d.Height,
+    Name: d['Name'],
+    EyeColor: d['Eye Color']
+  }
+}).then(ready);
+// Ready Function
+function ready(data) {
+  
+  // filtering for 2018 data
+  //data2018 = data.filter(function(d) { return d.year == 2018})
+  
+  //console.log(data2018)
+
+  // Define xScale and yScale domains here:
+	
+  //define sclaes manually instead of d3.extent so that min value is 0
+  //data.sort(function(a,b) { return +a.Height - +b.Height}) //sort by height
+  data.sort(function(a,b) {return d3.ascending(a.Name, b.Name);});//sort by name
+  yScale.domain([0, d3.max(data, function(d) {return d.Height})+4]); //add 4 to label last tick
+  xScale.domain(data.map(function(d) { return d.Name; }));
+
+  // define xAxisGroup and yAxisGroup here:
+//const innerHeight = height - margin.top - margin.bottom;
+  
+ var xAxisGroup = svg.append('g')
+ 		.attr('class', 'x axis')
+ 		.call(xAxis)
+ 		.attr("transform", "translate(0," + height + ")")
+  	.selectAll('text')
+    .attr('transform', 'rotate(270) translate(-110, -12)')
+		.style('text-anchor', 'start'); 	
+
+ var yAxisGroup = svg.append('g')
+ 		.attr('class', 'y axis')
+ 		.call(yAxis)
+    .selectAll('text')
+    .attr('transform', 'rotate(270) translate(12,11)');
+
+ var colorScale = d3.scaleOrdinal(d3.schemeAccent);
+
+  // Create bars here:
+  
+    svg.selectAll(".bar") 
+    .data(data) 
+    .enter().append("rect")
+    .attr("class", "bar")
+    .attr("x", function(d) { return xScale(d.Name); }) 
+    .attr("y", function(d) { return yScale(d.Height); })
+    .attr("width", xScale.bandwidth()) 
+    .attr("height", function(d) { return height - yScale(d.Height); }) 
+    //.attr("fill", function(d){ return d.EyeColor == "Blue" ? "Blue" : "fill"})
+    //.attr("fill", function(d){ return d.EyeColor == "Brown" ? "saddlebrown" : "fill"})
+    //attr("fill", function(d) { return colorPicker(d)})
+    //.attr("fill", function(d) {return z(d.EyeColor); })
+    .attr("fill", function(d) { return colorScale(d.EyeColor);} );
+
+    // Remove duplicates
+    var colorColumnVals = d3.map(data, function(d) { return d.EyeColor;}).keys();
+
+    var colorLegend1 = svg.selectAll(".legend")
+                    .data(colorColumnVals)
+                    .enter()
+                    .append("g")
+                    .attr("class", "legend")
+                    .attr("transform", function(d, i) { return "translate(" + legendPos.x + "," + i * legendPos.height + ")"; });
+
+                colorLegend1.append("rect")
+                    .attr("width",  legendPos.width)
+                    .attr("height", legendPos.height)
+                    .style("fill", colorScale);
+
+                colorLegend1.append("text")
+                    .attr("x", 1.1*legendPos.width)
+                    .attr("y", 0.7*legendPos.height)
+                    .style('font-size', 14)
+                    .text(function(d) { return d; })
+                    .attr('transform', 'rotate(270) translate(-50, -10)');
+//colorLegend1.attr("transform", "rotate(-90)"); //rotate legend to make horizontal
+
+/*
+function colorPicker(v) {
+  if (d.EyeColor == "Blue") {return "dodgerblue"}
+  else if (d.EyeColor == "Brrown") {return "saddlebrown"}
+  else if (d.EyeColor == "Brown") {return "saddlebrown"}
+  else if (d.EyeColor == "Black") {return "orange";}
+}
+*/
+
+
+ }
+
+
+</script>
